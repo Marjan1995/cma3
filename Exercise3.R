@@ -69,3 +69,63 @@ geom_path()+
 geom_point()+
 coord_fixed()
 
+#Task 5
+library(SimilarityMeasures)
+library(patchwork)
+ggplot(data = pedestrian, mapping = aes(E, N))+
+  geom_point(col = pedestrian$TrajID)+
+  geom_path(col = pedestrian$TrajID)+
+  facet_wrap(~TrajID, nrow = 2)+
+  labs(title = "Different Trajectories")
+
+#Task 6
+df <- filter(pedestrian, TrajID == 1)
+traj <- append(df$E, df$N)
+matrix1 <- matrix(traj, length(traj)/2)
+df <- filter(pedestrian, TrajID == 2)
+traj <- append(df$E, df$N)
+matrix2 <- matrix(traj, length(traj)/2)
+df <- filter(pedestrian, TrajID == 3)
+traj <- append(df$E, df$N)
+matrix3 <- matrix(traj, length(traj)/2)
+df <- filter(pedestrian, TrajID == 4)
+traj <- append(df$E, df$N)
+matrix4 <- matrix(traj, length(traj)/2)
+df <- filter(pedestrian, TrajID == 5)
+traj <- append(df$E, df$N)
+matrix5 <- matrix(traj, length(traj)/2)
+df <- filter(pedestrian, TrajID == 6)
+traj <- append(df$E, df$N)
+matrix6 <- matrix(traj, length(traj)/2)
+dtw <- DTW(matrix1, matrix2, -1)%>%
+append(DTW(matrix1, matrix3, -1))%>%
+append(DTW(matrix1, matrix4, -1))%>%
+append(DTW(matrix1, matrix5, -1))%>%
+append(DTW(matrix1, matrix6, -1))
+pd <- 10
+edit_dist <- EditDist(matrix1, matrix2, pd)%>%
+append(EditDist(matrix1, matrix3, pd))%>%
+append(EditDist(matrix1, matrix4, pd))%>%
+append(EditDist(matrix1, matrix5, pd))%>%
+append(EditDist(matrix1, matrix6, pd))
+frechet_dist <- Frechet(matrix1, matrix2)%>%
+append(Frechet(matrix1, matrix3))%>%
+append(Frechet(matrix1, matrix4))%>%
+append(Frechet(matrix1, matrix5))%>%
+append(Frechet(matrix1, matrix6))
+lcss_dist <- Frechet(matrix1, matrix2)%>%
+append(LCSS(matrix1, matrix3, 2, 2, 0.5))%>%
+append(LCSS(matrix1, matrix4, 2, 2, 0.5))%>%
+append(LCSS(matrix1, matrix5, 2, 2, 0.5))%>%
+append(LCSS(matrix1, matrix6, 2, 2, 0.5))
+trajectories <- c("2","3","4","5","6")
+distance_measures <- data.frame(trajectories, dtw, edit_dist, frechet_dist, lcss_dist)
+p1 <- ggplot(distance_measures, aes(x=trajectories, y=dtw, fill = trajectories)) + geom_bar(stat="identity", show.legend = FALSE) + ggtitle('Distance Time Warping')
+p2 <- ggplot(distance_measures, aes(x=trajectories, y=lcss_dist, fill = trajectories)) + geom_bar(stat="identity", show.legend = FALSE) + ggtitle('Longest Common Shared Segment')
+p3 <- ggplot(distance_measures, aes(x=trajectories, y=edit_dist, fill = trajectories)) + geom_bar(stat="identity", show.legend = FALSE) + ggtitle("Edit Distance")
+p4 <- ggplot(distance_measures, aes(x=trajectories, y=frechet_dist, fill = trajectories)) + geom_bar(stat="identity", show.legend = FALSE) + ggtitle('Frechet Distance')
+wrapped <- wrap_plots(p1,p2,p3,p4)
+wrapped + plot_annotation(
+title = 'Comparison of different Similarity Measures',
+subtitle = 'Trajectory 1 vs. Trajectory 2-6'
+)
